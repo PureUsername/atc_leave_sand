@@ -396,6 +396,17 @@ const formatDriverDescriptorClient = (driver = {}, fallback = "") => {
   return `${namePart} (${categoryPart})`;
 };
 
+const extractCategoryFromDescriptor = (descriptor) => {
+  if (typeof descriptor !== "string") {
+    return "";
+  }
+  const match = descriptor.match(/\(([A-Z0-9_+\s-]+)\)\s*$/i);
+  if (!match) {
+    return "";
+  }
+  return normalizeCategoryKey(match[1]);
+};
+
 const extractApplicantDescriptor = (notification = {}) => {
   const rawMessage = typeof notification.message === "string" ? notification.message : "";
   if (rawMessage) {
@@ -469,20 +480,84 @@ const buildNotificationChatBodyZh = (notification = {}) => {
       ? Object.entries(takenSummary)
       : [];
 
-  if (summaryEntries.length) {
+  const applicant = notification?.applicant || {};
+  const metadata = notification?.metadata || {};
+  const applicantCategoryGroup = normalizeCategoryKey(
+    applicant.category_group || metadata.applicant_category_group
+  );
+  const applicantCategory = normalizeCategoryKey(
+    applicant.category || metadata.applicant_category
+  );
+  const resolvedGroupId =
+    applicantCategoryGroup || resolveCategoryGroupId(applicantCategory);
+  const groupMeta = resolvedGroupId ? getCategoryGroupMeta(resolvedGroupId) : null;
+  const allowedCategories = new Set();
+  const allowedGroups = new Set();
+
+  if (groupMeta && Array.isArray(groupMeta.categories)) {
+    groupMeta.categories.forEach((category) => {
+      const normalized = normalizeCategoryKey(category);
+      if (normalized) {
+        allowedCategories.add(normalized);
+      }
+    });
+  }
+  if (!allowedCategories.size && applicantCategory) {
+    allowedCategories.add(applicantCategory);
+  }
+  if (resolvedGroupId) {
+    const normalizedGroup = normalizeCategoryKey(resolvedGroupId);
+    if (normalizedGroup) {
+      allowedGroups.add(normalizedGroup);
+    }
+  }
+
+  const shouldFilterSummary =
+    allowedCategories.size > 0 || allowedGroups.size > 0;
+
+  const filteredSummaryEntries = summaryEntries
+    .map(([date, names]) => {
+      if (!Array.isArray(names)) {
+        return null;
+      }
+      const filteredNames = names
+        .map((descriptor) => (typeof descriptor === "string" ? descriptor.trim() : ""))
+        .filter((descriptor) => {
+          if (!descriptor) {
+            return false;
+          }
+          if (!shouldFilterSummary) {
+            return true;
+          }
+          const descriptorCategory = extractCategoryFromDescriptor(descriptor);
+          if (!descriptorCategory) {
+            return false;
+          }
+          if (allowedCategories.has(descriptorCategory)) {
+            return true;
+          }
+          const descriptorGroup = resolveCategoryGroupId(descriptorCategory);
+          return descriptorGroup ? allowedGroups.has(descriptorGroup) : false;
+        });
+      if (!filteredNames.length) {
+        return null;
+      }
+      return [date, filteredNames];
+    })
+    .filter(Boolean);
+
+  if (filteredSummaryEntries.length) {
     lines.push("");
     lines.push("司机已请假日期:");
-    summaryEntries.forEach(([date, names], index) => {
+    filteredSummaryEntries.forEach(([date, names], index) => {
       const safeDate = typeof date === "string" ? date.trim() + ":" : "";
       lines.push(safeDate);
-      if (Array.isArray(names) && names.length) {
-        names.forEach((descriptor) => {
-          if (descriptor) {
-            lines.push(descriptor);
-          }
-        });
-      }
-      if (index < summaryEntries.length - 1) {
+      names.forEach((descriptor) => {
+        if (descriptor) {
+          lines.push(descriptor);
+        }
+      });
+      if (index < filteredSummaryEntries.length - 1) {
         lines.push("");
       }
     });
@@ -951,10 +1026,7 @@ const submitForm = async () => {
         state.pendingForceNotification = response.notification || null;
         if (state.pendingForceStart) {
           showForceModal();
-          const promptMessage =
-            "Tarikh pilihan penuh. Sahkan permohonan paksa dalam tetingkap pengesahan.";
-          toast(promptMessage, "error", { position: "top-right" });
-          setStatus(promptMessage);
+          setStatus("");
           return;
         }
         resetPendingForceState();
