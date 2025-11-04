@@ -120,20 +120,6 @@ const resolveCategoryGroupFromToken = (token) => {
   return state.categoryGroupLookup[normalized] || "";
 };
 
-const getFilteredCategoryGroup = () => {
-  const filterState = getActiveDriverCategoryFilter();
-  if (!filterState?.hasFilter) {
-    return "";
-  }
-  for (const token of filterState.categories) {
-    const resolved = resolveCategoryGroupFromToken(token);
-    if (resolved) {
-      return resolved;
-    }
-  }
-  return "";
-};
-
 setCategoryGroups(DEFAULT_CATEGORY_GROUPS);
 
 const normalizeCategoryValue = (value) => (value == null ? "" : String(value)).trim().toLowerCase();
@@ -179,15 +165,57 @@ const collectHiddenCategoryFilters = () => {
     params.get("driverCategoryFilter") || "",
   ].filter(Boolean);
   tokens.push(...queryValues);
-  return Array.from(new Set(tokens.flatMap(splitCategoryTokens)));
+
+  const normalizedTokens = Array.from(new Set(tokens.flatMap(splitCategoryTokens)));
+  const groupSet = new Set();
+  const categorySet = new Set();
+
+  normalizedTokens.forEach((token) => {
+    const groupId = resolveCategoryGroupFromToken(token);
+    if (groupId) {
+      groupSet.add(groupId);
+      const meta = getCategoryGroupMeta(groupId);
+      meta?.categories?.forEach((category) => {
+        const normalizedCategory = normalizeCategoryValue(category);
+        if (normalizedCategory) {
+          categorySet.add(normalizedCategory);
+        }
+      });
+      return;
+    }
+    categorySet.add(token);
+  });
+
+  return {
+    tokens: normalizedTokens,
+    categories: Array.from(categorySet),
+    groups: Array.from(groupSet),
+  };
 };
 
 const getActiveDriverCategoryFilter = () => {
-  const categories = collectHiddenCategoryFilters();
+  const filters = collectHiddenCategoryFilters();
   return {
-    categories,
-    hasFilter: categories.length > 0,
+    ...filters,
+    hasFilter: (filters.categories?.length || 0) > 0 || (filters.groups?.length || 0) > 0,
   };
+};
+
+const getFilteredCategoryGroup = () => {
+  const filterState = getActiveDriverCategoryFilter();
+  if (!filterState?.hasFilter) {
+    return "";
+  }
+  if (filterState.groups?.length) {
+    return filterState.groups[0];
+  }
+  for (const token of filterState.tokens || []) {
+    const resolved = resolveCategoryGroupFromToken(token);
+    if (resolved) {
+      return resolved;
+    }
+  }
+  return "";
 };
 
 const driverMatchesActiveFilter = (driver, filterState) => {
