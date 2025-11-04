@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuti Pemandu Lori</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <meta name="atc-api-base" content="https://autocash.my/atc/public" />
+  <style>
+    .chip{ @apply inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100; }
+    .chip-full{ @apply bg-red-100 text-red-700; }
+    .chip-ok{ @apply bg-green-100 text-green-700; }
+    .chip-mid{ @apply bg-amber-100 text-amber-700; }
+    .flatpickr-wrapper {
+      display: flex;
+      width: 100%;
+      flex: 1 1 auto;
+    }
+    .flatpickr-wrapper .flatpickr-input {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+    #dateRange,
+    #dateRange.flatpickr-input,
+    input#dateRange.flatpickr-input[readonly] { 
+      width: 100% !important; 
+      min-width: 100% !important;
+      max-width: 100% !important;
+      flex: 1 1 auto !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-4xl mx-auto p-6 space-y-6">
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-b pb-4">
+      <div>
+        <h1 class="text-2xl font-bold">Cuti Pemandu Lori</h1>
+      </div>
+    </header>
+
+    <section class="bg-white rounded-2xl shadow p-5">
+      <h2 class="font-semibold mb-4">Mohon Cuti</h2>
+      <div class="flex flex-col gap-4 sm:flex-row">
+        <div class="w-full sm:flex-1">
+          <label for="driverSelect" class="block text-sm mb-1">Nama Kamu</label>
+          <select id="driverSelect" class="w-full border rounded p-3 text-base">
+            <option value="" selected disabled>Pilih nama</option>
+          </select>
+          <input
+            type="hidden"
+            id="driverCategoryFilter"
+            data-driver-category-filter
+            value=""
+          />
+        </div>
+        <div class="w-full sm:flex-1">
+          <label for="dateRange" class="block text-sm mb-1">Julat Tarikh</label>
+          <input
+            id="dateRange"
+            type="text"
+            class="w-full border rounded p-3 text-base bg-white"
+            placeholder="Pilih julat tarikh"
+            readonly
+          />
+        </div>
+      </div>
+
+      <p class="text-sm mt-4">
+        Bilangan pemandu yang telah mengambil cuti pada hari tersebut
+      </p>
+      <div id="capacityHints" class="mt-2 overflow-x-auto text-sm"></div>
+
+      <div class="mt-4 flex items-center gap-3">
+        <button id="btnSubmit" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Hantar</button>
+        <span id="status" class="text-sm text-slate-500"></span>
+      </div>
+
+      <p class="text-xs text-slate-500 mt-4">
+        Maksimum 3 pemandu boleh bercuti setiap hari. Jika hari pilihan penuh, anda boleh pilih untuk
+        <strong>paksa 3 hari bekerja berturut-turut</strong> bermula dari tarikh mula anda (hujung minggu tidak dikira).
+      </p>
+    </section>
+  </div>
+
+  <div id="forceModal" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
+      <h3 class="font-semibold text-lg">Had Harian Tercapai</h3>
+      <p class="mt-2 text-sm">
+        Satu atau lebih hari pilihan sudah mencapai jumlah maksimum pemandu bercuti. Adakah anda mahu mohon
+        <strong>3 hari bekerja berturut-turut</strong> bermula dari <strong>tarikh mula</strong> anda (tidak termasuk hujung minggu)?
+      </p>
+      <div class="mt-4 flex gap-2 justify-end">
+        <button id="btnCancelForce" class="px-3 py-2 rounded bg-slate-200">Batal</button>
+        <button id="btnConfirmForce" class="px-3 py-2 rounded bg-blue-600 text-white">Ya, mohon 3 hari</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ms.js"></script>
+  <script type="module" src="./js/driver.js"></script>
+</body>
+</html>
