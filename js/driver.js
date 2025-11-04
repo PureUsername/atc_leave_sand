@@ -3,7 +3,6 @@ import {
   apiGet,
   apiPost,
   addDays,
-  buildCalendarEmbedUrl,
   fmt,
   getCategoryChannelConfig,
   normalizeDriver,
@@ -31,10 +30,6 @@ const capacityHintContainer = qs("#capacityHints");
 const statusLabel = qs("#status");
 const dateRangeInput = qs("#dateRange");
 const forceModal = qs("#forceModal");
-const driverCalendarSection = qs("#driverCalendarSection");
-const driverCalendarFrame = qs("#driverCalendarFrame");
-const driverCalendarLink = qs("#driverCalendarLink");
-const driverCalendarLabel = qs("#driverCalendarLabel");
 const calendarUpdateMode =
   document.querySelector("[data-calendar-update-mode]")?.dataset?.calendarUpdateMode || "after_approval";
 let dateRangePicker = null;
@@ -252,36 +247,6 @@ const getActiveCategoryChannelConfig = (driver = null) => {
   return getCategoryChannelConfig(groupId);
 };
 
-const updateDriverCalendarEmbed = (driver = null, options = {}) => {
-  if (!driverCalendarSection || !driverCalendarFrame) {
-    return;
-  }
-  const channelConfig = getActiveCategoryChannelConfig(driver);
-  if (!channelConfig?.calendarId) {
-    driverCalendarSection.classList.add("hidden");
-    return;
-  }
-  const params = options.refresh
-    ? { refreshToken: Date.now() }
-    : {};
-  const src = buildCalendarEmbedUrl(channelConfig.calendarId, params);
-  if (src) {
-    driverCalendarFrame.src = src;
-  }
-  driverCalendarFrame.dataset.calendarId = channelConfig.calendarId;
-  driverCalendarSection.classList.remove("hidden");
-  if (driverCalendarLabel) {
-    driverCalendarLabel.textContent = channelConfig.label ? `Kalendar ${channelConfig.label}` : "Kalendar Google";
-  }
-  if (driverCalendarLink) {
-    if (channelConfig.calendarUrl) {
-      driverCalendarLink.href = channelConfig.calendarUrl;
-      driverCalendarLink.classList.remove("hidden");
-    } else {
-      driverCalendarLink.classList.add("hidden");
-    }
-  }
-};
 
 const driverMatchesActiveFilter = (driver, filterState) => {
   if (!driver || driver.active === false) {
@@ -774,8 +739,6 @@ const renderDriverOptions = () => {
   } else {
     placeholder.selected = true;
   }
-  const selectedDriver = getDriverById(driverSelect.value);
-  updateDriverCalendarEmbed(selectedDriver);
 };
 
 const collectSelectedDates = () => {
@@ -1105,10 +1068,6 @@ const initializeDatePicker = () => {
 };
 
 // Event bindings
-driverSelect?.addEventListener("change", () => {
-  const driver = getDriverById(driverSelect.value);
-  updateDriverCalendarEmbed(driver);
-});
 qs("#btnSubmit")?.addEventListener("click", submitForm);
 qs("#btnCancelForce")?.addEventListener("click", () => {
   hideForceModal();
