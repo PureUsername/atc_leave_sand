@@ -541,6 +541,19 @@ const sendLeaveNotificationWithSnapshot = async (notification = {}, dates = [], 
     notification.metadata.calendar_update_mode = calendarUpdateMode;
   }
 
+  const channelConfig = getActiveCategoryChannelConfig(driver);
+  if (channelConfig) {
+    if (channelConfig.chatId && !notification.metadata.chat_id) {
+      notification.metadata.chat_id = channelConfig.chatId;
+    }
+    if (channelConfig.id && !notification.metadata.calendar_channel_id) {
+      notification.metadata.calendar_channel_id = channelConfig.id;
+    }
+    if (channelConfig.calendarId && !notification.metadata.calendar_id) {
+      notification.metadata.calendar_id = channelConfig.calendarId;
+    }
+  }
+
   const metadataSource =
     notification.metadata && typeof notification.metadata === "object"
       ? notification.metadata
@@ -564,7 +577,18 @@ const sendLeaveNotificationWithSnapshot = async (notification = {}, dates = [], 
     metadata.calendar_update_mode = calendarUpdateMode;
   }
 
-  const channelConfig = getActiveCategoryChannelConfig(driver);
+  if (channelConfig) {
+    if (channelConfig.chatId && !metadata.chat_id) {
+      metadata.chat_id = channelConfig.chatId;
+    }
+    if (channelConfig.id && !metadata.calendar_channel_id) {
+      metadata.calendar_channel_id = channelConfig.id;
+    }
+    if (channelConfig.calendarId && !metadata.calendar_id) {
+      metadata.calendar_id = channelConfig.calendarId;
+    }
+  }
+
   const approvalBody = buildApprovalChatBody(notification) || notification.message;
   const approvalPayload = {
     chatId: channelConfig.chatId,
@@ -902,6 +926,7 @@ const submitForm = async () => {
       calendar_channel_id: calendarChannelConfig?.id,
       calendar_id: calendarChannelConfig?.calendarId,
       calendar_label: calendarChannelConfig?.label,
+      chat_id: calendarChannelConfig?.chatId,
     });
     if (response.ok) {
       toast(
@@ -988,6 +1013,7 @@ const confirmForce = async () => {
       calendar_channel_id: calendarChannelConfig?.id,
       calendar_id: calendarChannelConfig?.calendarId,
       calendar_label: calendarChannelConfig?.label,
+      chat_id: calendarChannelConfig?.chatId,
     });
     if (response.ok) {
       toast(
