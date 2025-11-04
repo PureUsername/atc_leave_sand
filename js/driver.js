@@ -891,20 +891,30 @@ const submitForm = async () => {
 
   setStatus("Sedang dihantar...");
 
+  const selectedDriver = getDriverById(driverId);
+  const calendarChannelConfig = getActiveCategoryChannelConfig(selectedDriver);
+
   try {
     const response = await apiPost("apply", {
       driver_id: driverId,
       start_date: start,
       end_date: end,
+      calendar_channel_id: calendarChannelConfig?.id,
+      calendar_id: calendarChannelConfig?.calendarId,
+      calendar_label: calendarChannelConfig?.label,
     });
     if (response.ok) {
-      const driver = getDriverById(driverId);
       toast(
         `Permohonan dihantar untuk ${response.applied_dates.length} hari`,
         "ok",
         { position: "center" }
       );
-      await afterApplied(response.applied_dates, { driver, driverId, notification: response.notification });
+      await afterApplied(response.applied_dates, {
+        driver: selectedDriver,
+        driverId,
+        notification: response.notification,
+        calendarChannelConfig,
+      });
       resetPendingForceState();
     } else {
       const errors = Array.isArray(response.errors) ? response.errors : [];
@@ -970,10 +980,14 @@ const confirmForce = async () => {
     return;
   }
   const driver = getDriverById(driverId);
+  const calendarChannelConfig = getActiveCategoryChannelConfig(driver);
   try {
     const response = await apiPost("apply_force3", {
       driver_id: driverId,
       start_date: state.pendingForceStart,
+      calendar_channel_id: calendarChannelConfig?.id,
+      calendar_id: calendarChannelConfig?.calendarId,
+      calendar_label: calendarChannelConfig?.label,
     });
     if (response.ok) {
       toast(
