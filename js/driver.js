@@ -33,7 +33,7 @@ const forceModal = qs("#forceModal");
 const calendarUpdateMode =
   document.querySelector("[data-calendar-update-mode]")?.dataset?.calendarUpdateMode || "after_approval";
 let dateRangePicker = null;
-const driverCategoryFilterMeta = document.querySelector('meta[name="driver-category-filter"]') || null;
+const driverCategoryFilterInput = document.querySelector('#driverCategoryFilter') || null;
 
 const DEFAULT_CATEGORY_GROUPS = [
   { id: "LOWBED", label: "LOWBED", categories: ["LOWBED"] },
@@ -146,9 +146,9 @@ const collectHiddenCategoryFilters = () => {
   if (selectFilter) {
     tokens.push(selectFilter);
   }
-  const metaValue = driverCategoryFilterMeta?.content || "";
-  if (metaValue) {
-    tokens.push(metaValue);
+  const inputValue = driverCategoryFilterInput?.value || "";
+  if (inputValue) {
+    tokens.push(inputValue);
   }
   qsa("[data-driver-category-filter]").forEach((node) => {
     if (!node) {
